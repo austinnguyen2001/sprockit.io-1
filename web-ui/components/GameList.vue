@@ -1,38 +1,25 @@
 <template>
   <div>
-    <div class="game-list" v-if="!selectedGame">
-      <div
+    <div class="game-list">
+      <nuxt-link
         class="game-card"
         v-for="(game, index) in games"
-        @click="setGameMode(game)"
         :key="index"
+        :to="game"
       >
         <div class="game-card-visual gold" />
         <div>{{ game }}</div>
-      </div>
+      </nuxt-link>
     </div>
-    <GameManager :game="selectedGame" v-else />
   </div>
 </template>
 
 <script>
-import GameManager from "~/components/GameContainer/GameManager.vue";
-
 export default {
-  components: {
-    GameManager,
-  },
   data() {
     return {
-      games: ["Maze"],
-      selectedGame: null,
+      games: ["maze"],
     };
-  },
-  mounted: function() {},
-  methods: {
-    setGameMode(Game) {
-      this.selectedGame = Game;
-    },
   },
 };
 </script>

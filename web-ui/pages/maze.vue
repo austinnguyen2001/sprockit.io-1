@@ -1,15 +1,23 @@
 <template>
   <div class="container">
-    <GameList class="app-container" />
+    <Maze class="app-container" />
+    <EditorPanel
+      class="editor-panel"
+      v-model="code"
+      @run="run"
+      :console="console"
+    />
   </div>
 </template>
 
 <script>
-import GameList from "~/components/GameList.vue";
+import EditorPanel from "~/components/EditorPanel.vue";
+import Maze from "~/components/Maze/Maze.vue";
 
 export default {
   components: {
-    GameList,
+    EditorPanel,
+    Maze,
   },
   data() {
     return {
@@ -93,9 +101,21 @@ export default {
 }
 
 .container {
-  display: grid;
   height: 100vh;
   width: 100vw;
-  padding: 3rem 3vw;
+}
+
+.editor-panel {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: var(--output-width);
+  display: flex;
+}
+
+.app-container {
+  overflow: hidden;
+  width: calc(100% - var(--output-width));
 }
 </style>
