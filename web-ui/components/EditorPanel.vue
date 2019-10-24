@@ -20,8 +20,6 @@
       class="panel-content"
       :is="currentTabComponent"
       :class="{ 'block-highlight': isResizing }"
-      :[currentPropKey]="currentProp"
-      @input="$emit('input', $event)"
     />
   </div>
 </template>
@@ -37,28 +35,11 @@ export default {
     Editor,
     Console,
   },
-  props: {
-    value: { type: String, default: "" },
-    console: {
-      type: Array,
-      default() {
-        return [];
-      },
-    },
-  },
   data() {
     return {
       isResizing: false,
       currentTabComponent: "Editor",
     };
-  },
-  computed: {
-    currentPropKey() {
-      return this.currentTabComponent === "Editor" ? "value" : "console";
-    },
-    currentProp() {
-      return this.currentTabComponent === "Editor" ? this.value : this.console;
-    },
   },
   methods: {
     handleTab(tab) {

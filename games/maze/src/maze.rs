@@ -30,7 +30,7 @@ impl Maze {
     pub fn new(size: usize) -> Self {
         let mut maze = Maze {
             player: Position { x: 0, y: 0 },
-            exit: Position { x: size, y: 0 },
+            exit: Position { x: size - 1, y: 0 },
             map: MazeMap {
                 size,
                 map: vec![Cell::Blocked; size * size],
@@ -38,7 +38,8 @@ impl Maze {
         };
 
         for x in 0..size {
-            maze.set(x, 0, Cell::Open)
+            maze.set(x, 0, Cell::Open);
+            maze.set(x, 2, Cell::Open);
         }
 
         maze

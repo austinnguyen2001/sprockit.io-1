@@ -13,12 +13,9 @@
 
 <script>
 export default {
-  props: {
-    console: {
-      type: Array,
-      default() {
-        return [];
-      },
+  computed: {
+    console() {
+      return this.$store.state.editor.console;
     },
   },
 };

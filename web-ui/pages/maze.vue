@@ -1,46 +1,33 @@
 <template>
   <div class="container">
     <Maze class="app-container" />
-    <EditorPanel
-      class="editor-panel"
-      v-model="code"
-      @run="run"
-      :console="console"
-    />
+    <EditorPanel class="editor-panel" @run="run" />
   </div>
 </template>
 
 <script>
 import EditorPanel from "~/components/EditorPanel.vue";
 import Maze from "~/components/Maze/Maze.vue";
+import { mapMutations } from "vuex";
 
 export default {
   components: {
     EditorPanel,
     Maze,
   },
-  data() {
-    return {
-      code:
-        "const a = 10;\nconst b = 20;\nconsole.log(a + b);\nconsole.log('A String');\n",
-      console: [],
-    };
-  },
   mounted() {
     if (typeof Storage !== "undefined") {
-      if (localStorage.code) {
-        this.code = localStorage.code;
-      }
-      if (localStorage.editorWidth) {
+      if (localStorage.code) this.updateCode(localStorage.code);
+
+      if (localStorage.editorWidth)
         document.documentElement.style.setProperty(
           "--output-width",
           `${localStorage.editorWidth}`,
         );
-      }
     }
 
     window.log = (output, type) => {
-      this.addToLog(output, type);
+      this.appendToConsole(output, type);
     };
 
     const saveCode = e => {
@@ -54,6 +41,11 @@ export default {
     };
 
     document.addEventListener("keydown", saveCode);
+  },
+  computed: {
+    code() {
+      return this.$store.state.editor.code;
+    },
   },
   methods: {
     run() {
@@ -84,13 +76,10 @@ export default {
       doc.write(`<script>${this.code}${unescape("%3C/script%3E")}`);
       doc.close();
     },
-    addToLog(output, type) {
-      const consoleLine = {
-        output: output,
-        type: type,
-      };
-      this.console.push(consoleLine);
-    },
+    ...mapMutations({
+      appendToConsole: "editor/appendToConsole",
+      updateCode: "editor/updateCode",
+    }),
   },
 };
 </script>

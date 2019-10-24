@@ -1,18 +1,13 @@
 <template>
-  <client-only placeholder="Codemirror Loading...">
-    <codemirror
-      :value="value"
-      @input="$emit('input', $event)"
-      :options="cmOption"
-    />
+  <client-only placeholder>
+    <codemirror :value="code" @input="updateCode($event)" :options="cmOption" />
   </client-only>
 </template>
 
 <script>
+import { mapMutations } from "vuex";
+
 export default {
-  props: {
-    value: { type: String, default: "" },
-  },
   data() {
     return {
       cmOption: {
@@ -33,6 +28,16 @@ export default {
         },
       },
     };
+  },
+  methods: {
+    ...mapMutations({
+      updateCode: "editor/updateCode",
+    }),
+  },
+  computed: {
+    code() {
+      return this.$store.state.editor.code;
+    },
   },
 };
 </script>
