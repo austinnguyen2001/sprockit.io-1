@@ -3,7 +3,7 @@
     <client-only placeholder>
       <vue-p5
         id="p5-js__renderer"
-        v-on="{ setup, draw, mousewheel, mousedragged, mousereleased }"
+        v-on="{ setup, draw, mousedragged, mousereleased }"
       />
     </client-only>
   </div>
@@ -21,7 +21,6 @@ export default {
   },
   data() {
     return {
-      rendererProps: { left: 0, top: 0, size: 800 },
       canvasProps: { width: 0, height: 0 },
     };
   },
@@ -49,101 +48,139 @@ export default {
         this.canvasProps.height,
         sketch.WEBGL,
       );
+      sketch.ambientLight(200);
+      sketch.pointLight(255, 255, 255, 0, -400, 100);
+      sketch.noStroke();
     },
-    draw(sketch) {
-      if (this.gameState) {
-        const gameSize = [600, 600, 20];
-        sketch.background("#2b2b2b");
-        sketch.ambientLight(200);
-        sketch.pointLight(255, 255, 255, 0, -400, 400);
-        sketch.orbitControl(2, 2, 0);
-        sketch.noStroke();
-
-        sketch.push();
-        sketch.rotateX(0);
-        sketch.ambientMaterial(255);
-        sketch.box(gameSize);
-        sketch.pop();
-        ///////////////////////////////////
-        sketch.push();
-        sketch.rotateX(0);
-        sketch.ambientMaterial(200);
-        sketch.translate(-310, 0, 10);
-        sketch.box(20, 640, 40);
-        sketch.pop();
-
-        sketch.push();
-        sketch.rotateX(0);
-        sketch.ambientMaterial(200);
-        sketch.translate(310, 0, 10);
-        sketch.box(20, 640, 40);
-        sketch.pop();
-
-        sketch.push();
-        sketch.rotateX(0);
-        sketch.ambientMaterial(200);
-        sketch.translate(0, -310, 10);
-        sketch.box(600, 20, 40);
-        sketch.pop();
-
-        sketch.push();
-        sketch.rotateX(0);
-        sketch.ambientMaterial(200);
-        sketch.translate(0, 310, 10);
-        sketch.box(600, 20, 40);
-        sketch.pop();
-
-        ////////////////////////////////////////
-
-        let gridUnit = 60;
-        const defaultLoc = -gameSize[0] / 2 + gridUnit / 2;
-        sketch.push();
-        sketch.rotateX(0);
-        sketch.ambientMaterial(255, 0, 0);
-        sketch.translate(
-          defaultLoc + this.gameState.player.x * 60,
-          defaultLoc + this.gameState.player.y * 60,
-          40,
+    createWebGlBox(sketch, rotation, color, translate, size) {
+      sketch.push();
+      sketch.rotateX(rotation);
+      sketch.ambientMaterial(color);
+      sketch.translate(translate);
+      sketch.box(size);
+      sketch.pop();
+    },
+    createGameGrid(
+      sketch,
+      rotation,
+      backgroundColor,
+      edgeColor,
+      edgeWidth,
+      gridSize,
+    ) {
+      this.createWebGlBox(
+        sketch,
+        rotation,
+        backgroundColor,
+        sketch.createVector(0, 0, 0),
+        gridSize,
+      );
+      this.createGameGridBorder(
+        sketch,
+        rotation,
+        edgeColor,
+        edgeWidth,
+        gridSize.map(k => k + 20),
+      );
+    },
+    createGameGridBorder(sketch, rotation, edgeColor, edgeWidth, gridSize) {
+      const translate = {
+        y: [-gridSize[1] / 2, gridSize[1] / 2, false, 0],
+        x: [false, 0, -gridSize[0] / 2, gridSize[0] / 2],
+      };
+      for (let i = 0; i < 4; i++) {
+        this.createWebGlBox(
+          sketch,
+          rotation,
+          edgeColor,
+          sketch.createVector(translate.x[3 - i], translate.y[3 - i], 10),
+          [
+            Math.abs(translate.x[i]) > edgeWidth
+              ? Math.abs(translate.x[i]) * 2 + edgeWidth
+              : edgeWidth,
+            Math.abs(translate.y[i]) > edgeWidth
+              ? Math.abs(translate.y[i]) * 2 + edgeWidth
+              : edgeWidth,
+            40,
+          ],
         );
-        sketch.box(gridUnit, gridUnit, gridUnit);
-        sketch.pop();
+      }
+    },
+    createGameEntities(sketch, rotation, gameEntities, gameSize, gridUnit) {
+      const defaultLocX = -gameSize[0] / 2 + gridUnit / 2;
+      const defaultLocY = -gameSize[1] / 2 + gridUnit / 2;
 
-        sketch.push();
-        sketch.rotateX(0);
-        sketch.ambientMaterial(0, 255, 0);
-        sketch.translate(
-          defaultLoc + this.gameState.exit.x * 60,
-          defaultLoc + this.gameState.exit.y * 60,
-          40,
-        );
-        sketch.box(gridUnit, gridUnit, gridUnit);
-        sketch.pop();
+      gameEntities.forEach(entities => {
+        if (entities[0] !== "map")
+          this.createWebGlBox(
+            sketch,
+            rotation,
+            [255, 0, 0],
+            sketch.createVector(
+              defaultLocX + entities[1].x * 60,
+              defaultLocY + entities[1].y * 60,
+              40,
+            ),
+            [gridUnit, gridUnit, gridUnit],
+          );
+      });
+    },
+    createGameMap(sketch, rotation, gameSize, gridUnit) {
+      const defaultLocX = -gameSize[0] / 2 + gridUnit / 2;
+      const defaultLocY = -gameSize[1] / 2 + gridUnit / 2;
 
-        for (let i = 0; i < this.gameState.map.length; i++) {
-          for (let k = 0; k < this.gameState.map[i].length; k++) {
-            if (this.gameState.map[k][i] == "Blocked") {
-              sketch.push();
-              sketch.rotateX(0);
-              sketch.ambientMaterial(192, 178, 131);
-              sketch.translate(defaultLoc + i * 60, defaultLoc + k * 60, 20);
-              sketch.box(gridUnit, gridUnit, 20);
-              sketch.pop();
-            }
-          }
+      for (let i = 0; i < this.gameState.map.length; i++) {
+        for (let k = 0; k < this.gameState.map[i].length; k++) {
+          let material;
+          if (this.gameState.map[k][i] == "blocked") material = [192, 178, 131];
+          if (this.gameState.map[k][i] == "hidden") material = [50, 50, 50];
+          if (material)
+            this.createWebGlBox(
+              sketch,
+              rotation,
+              material,
+              sketch.createVector(
+                defaultLocX + i * 60,
+                defaultLocY + k * 60,
+                20,
+              ),
+              [gridUnit, gridUnit, 20],
+            );
         }
       }
     },
-    mousewheel(sketch) {
-      let sensitivityZoom = 0.05;
-      let scaleFactor = sketch.height;
-      if (sketch._mouseWheelDeltaY > 0) {
-        console.info(sketch._curCamera);
-      } else {
-        console.info("dsd");
+    draw(sketch) {
+      sketch.background("#2b2b2b");
+      sketch.orbitControl(2.5, 2.5);
+      if (this.gameState) {
+        const gridUnit = 60;
+        const gameEntities = Object.entries(this.gameState);
+
+        const gameSize = [
+          this.gameState.map.length * gridUnit,
+          this.gameState.map[0].length * gridUnit,
+          20,
+        ];
+
+        this.createGameGrid(
+          sketch,
+          Math.PI / 5,
+          [255, 255, 255],
+          [192, 178, 131],
+          20,
+          gameSize,
+        );
+
+        this.createGameEntities(
+          sketch,
+          Math.PI / 5,
+          gameEntities,
+          gameSize,
+          gridUnit,
+        );
+
+        this.createGameMap(sketch, Math.PI / 5, gameSize, gridUnit);
       }
-    },
-    mousedragged(sketch) {
-      console.info(sketch);
     },
     checkResizeCanvas(sketch) {
       if (
@@ -162,12 +199,13 @@ export default {
           document.getElementById("p5-js__renderer").offsetWidth,
           document.getElementById("p5-js__renderer").offsetHeight,
         );
-        this.rendererProps.left += (sketch.mouseX - sketch.pmouseX) / 2;
-        return true;
-      } else return false;
+      }
     },
     mousereleased(sketch) {
-      console.info(sketch);
+      this.checkResizeCanvas(sketch);
+    },
+    mousedragged(sketch) {
+      this.checkResizeCanvas(sketch);
     },
     async createGameSession() {
       try {
@@ -181,6 +219,23 @@ export default {
       } catch (error) {
         alert("Please Reload Site");
       }
+    },
+    async movePlayerCharacter(direction) {
+      try {
+        this.$axios.post(`/api/game/maze/move/${direction}`, "", {
+          headers: { "X-TOKEN": this.token },
+        });
+        this.updateGameState();
+      } catch (error) {
+        alert("Please Reload Site");
+      }
+    },
+    async updateGameState() {
+      const gameState = (await this.$axios.get("/api/game/maze/map", {
+        headers: { "X-TOKEN": this.token },
+      })).data;
+      console.info(gameState);
+      this.setGameState(gameState);
     },
     ...mapMutations({
       setGameState: "game/setGameState",
